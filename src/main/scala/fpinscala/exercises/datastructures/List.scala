@@ -1,5 +1,7 @@
 package fpinscala.exercises.datastructures
 
+import scala.annotation.tailrec
+
 /** `List` data type, parameterized on a type, `A`. */
 enum List[+A]:
   /** A `List` data constructor representing the empty list. */
@@ -24,7 +26,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     else Cons(as.head, apply(as.tail*))
 
   @annotation.nowarn // Scala gives a hint here via a warning, so let's disable that
-  val result = List(1,2,3,4,5) match
+  val result: Int = List(1,2,3,4,5) match
     case Cons(x, Cons(2, Cons(4, _))) => x
     case Nil => 42
     case Cons(x, Cons(y, Cons(3, Cons(4, _)))) => x + y
@@ -47,17 +49,55 @@ object List: // `List` companion object. Contains functions for creating and wor
   def productViaFoldRight(ns: List[Double]): Double =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
-  def tail[A](l: List[A]): List[A] = ???
+  def tail[A](l: List[A]): List[A] = {
+    l match {
+      case Cons(_, t) => t
+      case _ => sys.error("Tail of Nil")
+    }
+  }
 
-  def setHead[A](l: List[A], h: A): List[A] = ???
+  def setHead[A](l: List[A], h: A): List[A] = Cons(h, l)
 
-  def drop[A](l: List[A], n: Int): List[A] = ???
+  def drop[A](l: List[A], n: Int): List[A] = {
+    @annotation.tailrec
+    def go(l: List[A], n: Int): List[A] = {
+      if (n <= 0) l
+      else go(tail(l), n - 1)
+    }
+    go(l, n)
+  }
 
-  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = ???
+  @tailrec
+  def drop2[A](l: List[A], n: Int): List[A] = {
+    if (n <= 0) l
+    else l match {
+      case Cons(_, t) => drop2(t, n - 1)
+      case _ => l
+    }
+  }
 
-  def init[A](l: List[A]): List[A] = ???
+  @tailrec
+  def dropWhile[A](l: List[A], f: A => Boolean): List[A] = {
+    l match {
+      case Cons(h, t) if f(h) => dropWhile(t, f)
+      case _ => l
+    }
+  }
 
-  def length[A](l: List[A]): Int = ???
+  def init[A](l: List[A]): List[A] = {
+    l match {
+      case Cons(h, Nil) => List(h)
+      case Cons(h, t) => Cons(h, init(t))
+      case Nil => sys.error("init of a Nil")
+    }
+  }
+
+  def length[A](l: List[A]): Int = {
+    l match {
+      case Nil => 0
+      case Cons(_, t) => 1 + length(t)
+    }
+  }
 
   def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = ???
 
