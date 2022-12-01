@@ -49,12 +49,10 @@ object List: // `List` companion object. Contains functions for creating and wor
   def productViaFoldRight(ns: List[Double]): Double =
     foldRight(ns, 1.0, _ * _) // `_ * _` is more concise notation for `(x,y) => x * y`; see sidebar
 
-  def tail[A](l: List[A]): List[A] = {
-    l match {
+  def tail[A](l: List[A]): List[A] =
+    l match
       case Cons(_, t) => t
       case _ => sys.error("Tail of Nil")
-    }
-  }
 
   def setHead[A](l: List[A], h: A): List[A] = Cons(h, l)
 
@@ -99,19 +97,48 @@ object List: // `List` companion object. Contains functions for creating and wor
     }
   }
 
-  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = ???
+  def lengthViaFoldRight[A](l: List[A]): Int =
+    foldRight(l, 0, (_, y) => y + 1)
 
-  def sumViaFoldLeft(ns: List[Int]): Int = ???
+  @annotation.tailrec
+  def foldLeft[A,B](l: List[A], acc: B, f: (B, A) => B): B = {
+    l match {
+      case Nil => acc
+      case Cons(h, t) => foldLeft(t, f(acc, h), f)
+    }
+  }
 
-  def productViaFoldLeft(ns: List[Double]): Double = ???
+  def sumViaFoldLeft(ns: List[Int]): Int =
+    foldLeft(ns, 0, _ + _)
 
-  def lengthViaFoldLeft[A](l: List[A]): Int = ???
+  def productViaFoldLeft(ns: List[Double]): Double =
+    foldLeft(ns, 1, _ * _)
 
-  def reverse[A](l: List[A]): List[A] = ???
+  def lengthViaFoldLeft[A](l: List[A]): Int =
+    foldLeft(l, 0, (x, _) => 1 + x)
 
-  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = ???
+  def reverse[A](l: List[A]): List[A] = {
+    foldLeft(l, List[A](), (b, a) => Cons(a, b))
+  }
 
-  def concat[A](l: List[List[A]]): List[A] = ???
+  def foldRightViaFoldLeft[A,B](l: List[A], acc: B, f: (A, B) => B): B = {
+    foldLeft(reverse(l), acc, (b, a) => f(a, b))
+  }
+
+  def foldRightViaFoldLeft2[A,B](l: List[A], acc: B, f: (A, B) => B): B = {
+    foldLeft(l, (b: B) => b, (g, a) => b => g(f(a, b)))(acc)
+  }
+  def foldLeftViaFoldRight[A,B](l: List[A], acc: B, f: (B, A) => B): B = {
+    foldRight(l, (b: B) => b, (a, g) => b => g(f(b, a)))(acc)
+  }
+
+  def appendViaFoldRight[A](l: List[A], r: List[A]): List[A] = {
+    foldRight(l, r, Cons(_, _))
+  }
+
+  def concat[A](l: List[List[A]]): List[A] = {
+    foldLeft(l, List[A](), append)
+  }
 
   def incrementEach(l: List[Int]): List[Int] = ???
 
