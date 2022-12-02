@@ -118,7 +118,7 @@ object List: // `List` companion object. Contains functions for creating and wor
     foldLeft(l, 0, (x, _) => 1 + x)
 
   def reverse[A](l: List[A]): List[A] = {
-    foldLeft(l, List[A](), (b, a) => Cons(a, b))
+    foldLeft(l, Nil: List[A], (b, a) => Cons(a, b))
   }
 
   def foldRightViaFoldLeft[A,B](l: List[A], acc: B, f: (A, B) => B): B = {
@@ -137,23 +137,64 @@ object List: // `List` companion object. Contains functions for creating and wor
   }
 
   def concat[A](l: List[List[A]]): List[A] = {
-    foldLeft(l, List[A](), append)
+    foldLeft(l, Nil: List[A], append)
   }
 
-  def incrementEach(l: List[Int]): List[Int] = ???
+  def incrementEach(l: List[Int]): List[Int] = {
+    foldRight(l, Nil: List[Int], (a, acc) => Cons(a + 1, acc))
+  }
 
-  def doubleToString(l: List[Double]): List[String] = ???
+  def doubleToString(l: List[Double]): List[String] = {
+    foldRight(l, Nil: List[String], (a, acc) => Cons(a.toString, acc))
+  }
 
-  def map[A,B](l: List[A], f: A => B): List[B] = ???
+  def map[A,B](l: List[A], f: A => B): List[B] = {
+    foldRight(l, Nil: List[B], (a, acc) => Cons(f(a), acc))
+  }
 
-  def filter[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filter[A](as: List[A], f: A => Boolean): List[A] = {
+    foldRight(as, Nil: List[A], (a, acc) => {
+      if (f(a)) Cons(a, acc)
+      else acc
+    })
+  }
 
-  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = ???
+  def flatMap[A,B](as: List[A], f: A => List[B]): List[B] = {
+    concat(map(as, f))
+  }
 
-  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = ???
+  def filterViaFlatMap[A](as: List[A], f: A => Boolean): List[A] = {
+    flatMap(as, a => if (f(a)) List(a) else Nil)
+  }
 
-  def addPairwise(a: List[Int], b: List[Int]): List[Int] = ???
+  def addPairwise(a: List[Int], b: List[Int]): List[Int] = {
+    (a, b) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(ha, ta), Cons(hb, tb)) => Cons(ha + hb, addPairwise(ta, tb))
+    }
+  }
 
-  // def zipWith - TODO determine signature
+  def zipWith[A,B,C](as: List[A], bs: List[B])(f: (A, B) => C): List[C] = {
+    (as, bs) match {
+      case (Nil, _) => Nil
+      case (_, Nil) => Nil
+      case (Cons(ha, ta), Cons(hb, tb)) => Cons(f(ha, hb), zipWith(ta, tb)(f))
+    }
+  }
 
-  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = ???
+  def startsWith[A](sup: List[A], sub: List[A]): Boolean = {
+    (sup, sub) match {
+      case (_, Nil) => true
+      case (Cons(hSup, tSup), Cons(hSub, tSub)) if hSup == hSub => startsWith(tSup, tSub)
+      case _ => false
+    }
+  }
+
+  def hasSubsequence[A](sup: List[A], sub: List[A]): Boolean = {
+    sup match {
+      case Nil => sub == Nil
+      case _ if startsWith(sup, sub) => true
+      case Cons(_, t) => hasSubsequence(t, sub)
+    }
+  }
