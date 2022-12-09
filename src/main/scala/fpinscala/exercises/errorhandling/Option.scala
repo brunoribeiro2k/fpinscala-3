@@ -7,15 +7,22 @@ enum Option[+A]:
   case Some(get: A)
   case None
 
-  def map[B](f: A => B): Option[B] = ???
+  def map[B](f: A => B): Option[B] = this match
+    case None => None
+    case Some(a) => Some(f(a))
 
-  def getOrElse[B>:A](default: => B): B = ???
+  def getOrElse[B>:A](default: => B): B = this match
+    case Some(a) => a
+    case _ => default
 
-  def flatMap[B](f: A => Option[B]): Option[B] = ???
+  def flatMap[B](f: A => Option[B]): Option[B] =
+    map(f).getOrElse(None)
 
-  def orElse[B>:A](ob: => Option[B]): Option[B] = ???
+  def orElse[B>:A](ob: => Option[B]): Option[B] =
+    map(Some(_)).getOrElse(ob)
 
-  def filter(f: A => Boolean): Option[A] = ???
+  def filter(f: A => Boolean): Option[A] =
+    flatMap(a => if (f(a)) Some(a) else None)
 
 object Option:
 
@@ -36,10 +43,56 @@ object Option:
     if xs.isEmpty then None
     else Some(xs.sum / xs.length)
 
-  def variance(xs: Seq[Double]): Option[Double] = ???
+  def variance(xs: Seq[Double]): Option[Double] =
+    mean(xs).flatMap(m => mean(xs.map(x => math.pow(m - x, 2))))
 
-  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] = ???
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    (a, b) match
+      case (None, _) => None
+      case (_, None) => None
+      case (Some(a), Some(b)) => Some(f(a, b))
 
-  def sequence[A](as: List[Option[A]]): Option[List[A]] = ???
+  def map2ViaFlatMap[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    a.flatMap(aa => b.map(bb => f(aa, bb)))
 
-  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = ???
+  def map2Comprehension[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    for {
+      aa <- a
+      bb <- b
+    } yield f(aa, bb)
+
+  def map3[A,B,C,D](a: Option[A], b: Option[B], c: Option[C])(f: (A, B, C) => D): Option[D] =
+    a.flatMap(aa => b.flatMap(bb => c.map(cc => f(aa, bb, cc))))
+
+  def map3Comprehension[A,B,C,D](a: Option[A], b: Option[B], c: Option[C])(f: (A, B, C) => D): Option[D] =
+    for {
+      aa <- a
+      bb <- b
+      cc <- c
+    } yield f(aa,bb,cc)
+
+  def sequence[A](as: List[Option[A]]): Option[List[A]] =
+    as match
+      case Nil => Some(Nil)
+      case h :: t => h.flatMap(hh => sequence(t).map(hh :: _))
+
+  /*
+  def flatMap[B](f: A => Option[B]): Option[B] =
+    map(f).getOrElse(None)
+
+  sequence(List(Some(1), Some(2), Some(3))
+  = Some(1).flatMap(hh => sequence(List(2), List(3)).map(hh :: _))
+  = Some(1).map(hh => sequence(List(2), List(3)).map(hh :: _)).getOrElse(None)
+  = Some(1 :: Sequence(List(2), List(3))
+  */
+
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] =
+    as match
+      case Nil => Some(Nil)
+      case h :: t => map2(f(h), traverse(t)(f))(_ :: _)
+
+  def lift[A,B](f: A => B): Option[A] => Option[B] =
+    _.map(f)
+
+  def sequenceViaTraverse[A](a: List[Option[A]]): Option[List[A]] =
+    traverse(a)(x => x)

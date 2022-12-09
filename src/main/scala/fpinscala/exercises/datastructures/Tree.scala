@@ -35,8 +35,9 @@ object Tree:
     case Leaf(_) => 1
     case Branch(l,r) => 1 + size(l) + size(r)
 
-  extension (t: Tree[Int]) def firstPositive: Int = ???
+//  extension (t: Tree[Int]) def firstPositive: Int = ???
 
-  extension (t: Tree[Int]) def maximum: Int = ???
+  extension (t: Tree[Int]) def maximum: Int =
+    t.fold(a => a, _ max _)
 
   extension (t: Tree[Int]) def maximumViaFold: Int = t.fold(a => a, _ max _)
