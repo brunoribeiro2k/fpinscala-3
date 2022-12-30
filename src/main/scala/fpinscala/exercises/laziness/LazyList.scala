@@ -76,7 +76,7 @@ enum LazyList[+A]:
     })
   }
 
-  def takeWhileViaUnfold(p: A => Boolean) =
+  def takeWhileViaUnfold(p: A => Boolean): LazyList[A] =
     unfold(this)({
       case Cons(h, t) if p(h()) => Some(h(), t())
       case _ => None
@@ -97,10 +97,23 @@ enum LazyList[+A]:
     })
 
 
-  def startsWith[B](that: LazyList[B]): Boolean = {
-    ???
-  }
+  def startsWith[B](prefix: LazyList[B]): Boolean =
+    zipAllViaUnfold(prefix)
+      .takeWhileViaUnfold(_(1).isDefined)
+      .forAll((a, b) => (a == b))
 
+  def tails: LazyList[LazyList[A]] =
+    unfold(this)({
+      case Cons(h, t) => Some(Cons(h, t), t())
+      case _ => None
+    })
+
+  def scanRight[B](acc: B)(f: (A, => B) => B): LazyList[B] =
+    foldRight((acc, LazyList(acc)))((a, b0) =>
+      lazy val b1 = b0
+      val b2 = f(a, b1(0))
+      (b2, cons(b2, b1(1)))
+    )(1)
 
 object LazyList:
   def cons[A](hd: => A, tl: => LazyList[A]): LazyList[A] = 
