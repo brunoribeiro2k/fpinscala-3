@@ -48,9 +48,8 @@ object Option:
 
   def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
     (a, b) match
-      case (None, _) => None
-      case (_, None) => None
       case (Some(a), Some(b)) => Some(f(a, b))
+      case _ => None
 
   def map2ViaFlatMap[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
     a.flatMap(aa => b.map(bb => f(aa, bb)))
@@ -95,4 +94,4 @@ object Option:
     _.map(f)
 
   def sequenceViaTraverse[A](a: List[Option[A]]): Option[List[A]] =
-    traverse(a)(x => x)
+    traverse(a)(identity)
